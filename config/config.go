@@ -8,7 +8,10 @@ import (
 )
 
 // Logger is the global logger to be shared by all the children
-var Logger *zap.SugaredLogger
+var (
+	Logger  *zap.SugaredLogger
+	Version = "v0.2.1"
+)
 
 func init() {
 	viper.SetConfigName("config")
@@ -47,4 +50,6 @@ func init() {
 			raven.SetDSN(dsn.(string))
 		}
 	}
+
+	Logger.Infow("Application Started Succesfully!", "Version", Version)
 }
