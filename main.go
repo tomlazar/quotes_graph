@@ -84,7 +84,7 @@ func main() {
 
 					searchMatch, _ := regexp.MatchString("<@UGU8HMXC5> search", text)
 					if searchMatch {
-						query := strings.TrimPrefix(text, "search ")
+						query := strings.TrimPrefix(text, "<@UGU8HMXC5> search ")
 						config.Logger.Debugw("searching",
 							"QUERY", query,
 						)
