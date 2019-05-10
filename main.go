@@ -30,10 +30,14 @@ func main() {
 		config.Logger.Fatal(err)
 	}
 
+	displayErr := func(err error, channel string) {
+		rtm.SendMessage(rtm.NewOutgoingMessage(fmt.Sprintf("Could not execute: %v", err), channel))
+	}
+
 	reportErr := func(err error, channel string) {
 		raven.CaptureError(err, nil)
 		config.Logger.Error(err)
-		rtm.SendMessage(rtm.NewOutgoingMessage(fmt.Sprintf("Could not execute: %v", err), channel))
+		displayErr(err, channel)
 	}
 
 	formatQuote := func(q contract.Quote) string {
@@ -68,18 +72,17 @@ func main() {
 
 				text := ev.Text
 				text = strings.TrimSpace(text)
-				text = strings.TrimPrefix(text, "<@UGU8HMXC5> ")
 
 				if ev.User != info.User.ID {
 					config.Logger.Debug(text)
 
-					listAllMatch, _ := regexp.MatchString("list all", text)
+					listAllMatch, _ := regexp.MatchString("<@UGU8HMXC5> list all", text)
 					if listAllMatch {
 						quotes, err := dao.QuoteDao.List(nil)
 						display(quotes, err, ev.Channel)
 					}
 
-					searchMatch, _ := regexp.MatchString("search", text)
+					searchMatch, _ := regexp.MatchString("<@UGU8HMXC5> search", text)
 					if searchMatch {
 						query := strings.TrimPrefix(text, "search ")
 						config.Logger.Debugw("searching",
@@ -91,29 +94,29 @@ func main() {
 						display(quotes, err, ev.Channel)
 					}
 
-					createMatch, _ := regexp.MatchString("create", text)
+					createMatch, _ := regexp.MatchString("<@UGU8HMXC5> create", text)
 					if createMatch {
 						text = strings.TrimPrefix(text, "create")
-						r, err := regexp.Compile(`"([^"]*)"`)
+						r, err := regexp.Compile(`"[^"]+"`)
 
 						if err != nil {
 							reportErr(err, ev.Channel)
 						}
 
-						matches := r.FindAllStringSubmatch(text, 10)
-						if matches == nil {
-							reportErr(errors.New(`Could not parse quote text, format: "[QUOTE]"( "[PERSON]")+ `), ev.Channel)
+						matches := r.FindAllString(text, 10)
+						if matches == nil || len(matches) < 2 {
+							displayErr(errors.New(`Could not parse quote text, format: "[QUOTE]"( "[PERSON]")+ `), ev.Channel)
 						}
 
 						now := time.Now()
 						quote := contract.Quote{
-							Text:      matches[0][1],
+							Text:      strings.Trim(matches[0], "\""),
 							SpokenBy:  []contract.Person{},
 							CreatedOn: &now,
 						}
 
 						for i := 1; i < len(matches); i++ {
-							quote.SpokenBy = append(quote.SpokenBy, contract.Person{Name: matches[i][1]})
+							quote.SpokenBy = append(quote.SpokenBy, contract.Person{Name: strings.Trim(matches[i], "\"")})
 						}
 
 						err = dao.QuoteDao.Create(quote)
@@ -121,7 +124,7 @@ func main() {
 							reportErr(err, ev.Channel)
 						}
 
-						rtm.SendMessage(rtm.NewOutgoingMessage("New Quote Created!"+formatQuote(quote), ev.Channel))
+						rtm.SendMessage(rtm.NewOutgoingMessage("New Quote Created!\n"+formatQuote(quote), ev.Channel))
 					}
 				}
 			case *slack.RTMError:
