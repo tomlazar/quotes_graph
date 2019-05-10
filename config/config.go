@@ -1,12 +1,14 @@
 package config
 
 import (
-	"fmt"
+	"go.uber.org/zap"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/getsentry/raven-go"
 	"github.com/spf13/viper"
 )
+
+// Logger is the global logger to be shared by all the children
+var Logger *zap.SugaredLogger
 
 func init() {
 	viper.SetConfigName("config")
@@ -20,20 +22,24 @@ func init() {
 	viper.SetDefault("debug", false)
 	viper.SetDefault("environment", "dev")
 
-	fmt.Println("it works?")
 	err := viper.ReadInConfig()
 
 	if err != nil {
-		logrus.Warnln("Could not load in config file")
+		panic("Could not load in config file")
 	}
 
+	var logger *zap.Logger
 	if viper.GetBool("interactive") {
-		logrus.SetFormatter(&logrus.TextFormatter{})
+		logger, err = zap.NewDevelopment()
+
+	} else {
+		logger, err = zap.NewProduction()
 	}
 
-	if viper.GetBool("debug") {
-		logrus.SetLevel(logrus.DebugLevel)
+	if err != nil {
+		panic(err)
 	}
+	Logger = logger.Sugar()
 
 	if viper.GetString("environment") != "dev" {
 		dsn := viper.Get("raven.dsn")

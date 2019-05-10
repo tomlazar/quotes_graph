@@ -10,11 +10,11 @@ import (
 
 	"github.com/getsentry/raven-go"
 
+	"github.com/tomlazar/quotes_graph/config"
 	_ "github.com/tomlazar/quotes_graph/config"
 	"github.com/tomlazar/quotes_graph/contract"
 	"github.com/tomlazar/quotes_graph/dao"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/nlopes/slack"
 	"github.com/spf13/viper"
 )
@@ -27,12 +27,12 @@ func main() {
 
 	dao, err := dao.NewDao()
 	if err != nil {
-		logrus.Fatalln(err)
+		config.Logger.Fatal(err)
 	}
 
 	reportErr := func(err error, channel string) {
 		raven.CaptureError(err, nil)
-		logrus.Errorln(err)
+		config.Logger.Error(err)
 		rtm.SendMessage(rtm.NewOutgoingMessage(fmt.Sprintf("Could not execute: %v", err), channel))
 	}
 
@@ -71,7 +71,7 @@ func main() {
 				text = strings.TrimPrefix(text, "<@UGU8HMXC5> ")
 
 				if ev.User != info.User.ID {
-					logrus.Debugln(text)
+					config.Logger.Debug(text)
 
 					listAllMatch, _ := regexp.MatchString("list all", text)
 					if listAllMatch {
@@ -82,7 +82,10 @@ func main() {
 					searchMatch, _ := regexp.MatchString("search", text)
 					if searchMatch {
 						query := strings.TrimPrefix(text, "search ")
-						logrus.WithField("QUERY", query).Debugln("searching")
+						config.Logger.Debugw("searching",
+							"QUERY", query,
+						)
+
 						quotes, err := dao.QuoteDao.Search(query, nil)
 
 						display(quotes, err, ev.Channel)
@@ -92,8 +95,6 @@ func main() {
 					if createMatch {
 						text = strings.TrimPrefix(text, "create")
 						r, err := regexp.Compile(`"([^"]*)"`)
-
-						logrus.Debugln("in create")
 
 						if err != nil {
 							reportErr(err, ev.Channel)
@@ -123,13 +124,10 @@ func main() {
 						rtm.SendMessage(rtm.NewOutgoingMessage("New Quote Created!"+formatQuote(quote), ev.Channel))
 					}
 				}
-
 			case *slack.RTMError:
-				logrus.Errorf("Error: %s\n", ev.Error())
-
+				config.Logger.Errorf("Error: %s\n", ev.Error())
 			case *slack.InvalidAuthEvent:
-				logrus.Fatalln("Invalid credentials")
-
+				config.Logger.Error("Invalid credentials")
 			default:
 				// Take no action
 			}

@@ -3,7 +3,7 @@ package dao
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/tomlazar/quotes_graph/config"
 
 	"github.com/neo4j/neo4j-go-driver/neo4j"
 	"github.com/spf13/viper"
@@ -40,7 +40,10 @@ func NewDao() (*Dao, error) {
 		return nil, fmt.Errorf("neo4j password is not defined")
 	}
 
-	logrus.WithField("uri", uri).Debugln("Starting new Dao")
+	config.Logger.Debugw("starting a new dao",
+		"uri", uri,
+	)
+
 	driver, err := neo4j.NewDriver(uri.(string), neo4j.BasicAuth(username.(string), password.(string), ""))
 	if err != nil {
 		return nil, err
