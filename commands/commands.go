@@ -33,6 +33,10 @@ func NewBot(dao *dao.Dao) *slacker.Slacker {
 	return bot
 }
 
+func trim(str string) string {
+	return strings.Trim(str, "\"")
+}
+
 func reportError(err error, response slacker.ResponseWriter) {
 	raven.CaptureError(err, nil)
 	logger.Error(err)
@@ -70,7 +74,7 @@ func SearchDefinition(dao *dao.Dao) *slacker.CommandDefinition {
 		Description: "Search will filter the list from the database and return that list",
 		Example:     "search [QUERY]",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			query := request.StringParam("query", "")
+			query := trim(request.StringParam("query", ""))
 
 			if query == "" {
 				response.ReportError(errors.New("querys must contain some text"))
@@ -100,8 +104,8 @@ func CreateDefinition(dao *dao.Dao) *slacker.CommandDefinition {
 		Description: "Create adds a new quote to the database. [Authors] is a comma seperated list",
 		Example:     "create [QUOTE] [AUTHORS]",
 		Handler: func(request slacker.Request, response slacker.ResponseWriter) {
-			quote := request.StringParam("quote", "")
-			authors := request.StringParam("authors", "")
+			quote := trim(request.StringParam("quote", ""))
+			authors := trim(request.StringParam("authors", ""))
 			authorsList := strings.Split(authors, ",")
 
 			if quote == "" {
