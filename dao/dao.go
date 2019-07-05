@@ -3,6 +3,8 @@ package dao
 import (
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/tomlazar/quotes_graph/config"
 
 	"github.com/neo4j/neo4j-go-driver/neo4j"
@@ -17,7 +19,11 @@ type Dao struct {
 	PersonDao *PersonDao
 }
 
+var logger *zap.SugaredLogger
+
 func init() {
+	logger = config.NewLogger("dao")
+
 	viper.SetDefault("neo.uri", nil)
 	viper.SetDefault("neo.auth.username", nil)
 	viper.SetDefault("neo.auth.password", nil)
@@ -40,7 +46,7 @@ func NewDao() (*Dao, error) {
 		return nil, fmt.Errorf("neo4j password is not defined")
 	}
 
-	config.Logger.Debugw("starting a new dao",
+	logger.Debugw("starting a new dao",
 		"uri", uri,
 	)
 

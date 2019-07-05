@@ -9,3 +9,14 @@ type Quote struct {
 	SpokenBy  []Person
 	CreatedOn *time.Time
 }
+
+func (q Quote) String() string {
+	str := "> *\"" + q.Text + "\"*"
+	if q.CreatedOn != nil {
+		str += "\n>_(" + q.CreatedOn.Format(time.ANSIC) + ")_"
+	}
+	for _, p := range q.SpokenBy {
+		str += "\n>\t- " + p.Name
+	}
+	return str
+}

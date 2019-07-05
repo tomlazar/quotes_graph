@@ -9,7 +9,6 @@ import (
 
 // Logger is the global logger to be shared by all the children
 var (
-	Logger  *zap.SugaredLogger
 	Version = "v0.2.1"
 )
 
@@ -31,10 +30,20 @@ func init() {
 		panic("Could not load in config file")
 	}
 
+	if viper.GetString("environment") != "dev" {
+		dsn := viper.Get("raven.dsn")
+		if dsn != nil {
+			raven.SetDSN(dsn.(string))
+		}
+	}
+}
+
+// NewLogger creates a new logger with the context specified
+func NewLogger(contxt string) *zap.SugaredLogger {
 	var logger *zap.Logger
+	var err error
 	if viper.GetBool("interactive") {
 		logger, err = zap.NewDevelopment()
-
 	} else {
 		logger, err = zap.NewProduction()
 	}
@@ -42,14 +51,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Logger = logger.Sugar()
 
-	if viper.GetString("environment") != "dev" {
-		dsn := viper.Get("raven.dsn")
-		if dsn != nil {
-			raven.SetDSN(dsn.(string))
-		}
-	}
-
-	Logger.Infow("Application Started Succesfully!", "Version", Version)
+	return logger.Sugar().With("context", contxt)
 }
