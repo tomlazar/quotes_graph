@@ -13,6 +13,6 @@ RUN cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_LIBDIR=lib .. && cmake --
 WORKDIR $GOPATH/src/github.com/tomlazar/quotes_graph
 
 COPY . .
-RUN go install
+RUN go install ./slack
 
-CMD ["quotes_graph"]
+CMD ["slack"]

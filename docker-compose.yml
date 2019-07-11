@@ -2,7 +2,7 @@ version: "3.2"
 services:
   neo4j:
     image: neo4j:latest
-    container_name: 'neo4j'
+    container_name: 'quotes_neo4j'
     volumes:
       - '$HOME/neo4j/import:/var/lib/neo4j/import'
       - '$HOME/neo4j/plugins:/plugins'
@@ -14,8 +14,10 @@ services:
     restart: on-failure
     command: neo4j
 
-  backend:
-    container_name: 'quotes_graph'
-    build: '.'
+  slack:
+    container_name: 'quotes_graph_slack'
+    build:
+      context: .
+      dockerfile: ./slack/Dockerfile
     depends_on: 
       - 'neo4j'

@@ -5,8 +5,8 @@ import (
 
 	_ "github.com/tomlazar/quotes_graph/config"
 
-	"github.com/tomlazar/quotes_graph/commands"
 	"github.com/tomlazar/quotes_graph/dao"
+	"github.com/tomlazar/quotes_graph/slack/commands"
 )
 
 func main() {
