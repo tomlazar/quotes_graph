@@ -21,3 +21,11 @@ services:
       dockerfile: ./slack/Dockerfile
     depends_on: 
       - 'neo4j'
+  api:
+    container_name: 'quotes_graph_api'
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    depends_on: 
+      - 'neo4j'
+
