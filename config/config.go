@@ -1,10 +1,16 @@
 package config
 
 import (
+	"fmt"
+	"os"
+
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/getsentry/raven-go"
 	"github.com/spf13/viper"
+
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 // Logger is the global logger to be shared by all the children
@@ -39,18 +45,35 @@ func init() {
 }
 
 // NewLogger creates a new logger with the context specified
-func NewLogger(contxt string) *zap.SugaredLogger {
-	var logger *zap.Logger
-	var err error
-	if viper.GetBool("interactive") {
-		logger, err = zap.NewDevelopment()
-	} else {
-		logger, err = zap.NewProduction()
-	}
+func NewLogger(context string) *zap.SugaredLogger {
+	filename := fmt.Sprintf("/logs/%v.log", context)
+	w := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   filename,
+		MaxSize:    500, // megabytes
+		MaxBackups: 3,
+		MaxAge:     28, // days
+	})
 
-	if err != nil {
-		panic(err)
-	}
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel
+	})
 
-	return logger.Sugar().With("context", contxt)
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	consoleErrors := zapcore.Lock(os.Stderr)
+
+	consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(
+			zapcore.NewJSONEncoder(zap.NewDevelopmentEncoderConfig()),
+			w,
+			zap.DebugLevel,
+		),
+		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
+		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
+	)
+	return zap.New(core).Sugar()
 }

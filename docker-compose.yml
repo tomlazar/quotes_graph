@@ -19,6 +19,8 @@ services:
     build:
       context: .
       dockerfile: ./slack/Dockerfile
+    volumes:
+      - './logs:/logs'
     depends_on: 
       - 'neo4j'
   api:
@@ -26,6 +28,10 @@ services:
     build:
       context: .
       dockerfile: ./api/Dockerfile
+    ports:
+      - 8080:8080
+    volumes:
+      - './logs:/logs'
     depends_on: 
       - 'neo4j'
 

@@ -65,12 +65,6 @@ func NewDao() (*Dao, error) {
 	return dao, nil
 }
 
-// ListOptions are options to refine the results of a list command
-type ListOptions struct {
-	Skip  int
-	Limit int
-}
-
 func withOptions(s string, opts *ListOptions) string {
 	if opts != nil {
 		if opts.Skip > 0 {
